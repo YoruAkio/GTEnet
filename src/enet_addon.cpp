@@ -20,6 +20,9 @@ private:
     Napi::Value Connect(const Napi::CallbackInfo& info);
     Napi::Value Disconnect(const Napi::CallbackInfo& info);
     Napi::Value SendPacket(const Napi::CallbackInfo& info);
+    Napi::Value SetCompression(const Napi::CallbackInfo& info);
+    Napi::Value SetChecksum(const Napi::CallbackInfo& info);
+    Napi::Value SetNewPacket(const Napi::CallbackInfo& info);
     
     ENetHost* host = nullptr;
     bool initialized = false;
@@ -38,7 +41,10 @@ Napi::Object ENetWrapper::Init(Napi::Env env, Napi::Object exports) {
         InstanceMethod("hostService", &ENetWrapper::HostService),
         InstanceMethod("connect", &ENetWrapper::Connect),
         InstanceMethod("disconnect", &ENetWrapper::Disconnect),
-        InstanceMethod("sendPacket", &ENetWrapper::SendPacket)
+        InstanceMethod("sendPacket", &ENetWrapper::SendPacket),
+        InstanceMethod("setCompression", &ENetWrapper::SetCompression),
+        InstanceMethod("setChecksum", &ENetWrapper::SetChecksum),
+        InstanceMethod("setNewPacket", &ENetWrapper::SetNewPacket)
     });
 
     constructor = Napi::Persistent(func);
@@ -342,6 +348,77 @@ Napi::Value ENetWrapper::SendPacket(const Napi::CallbackInfo& info) {
     
     int result = enet_peer_send(peer, channelID, packet);
     return Napi::Number::New(env, result);
+}
+
+Napi::Value ENetWrapper::SetCompression(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+    
+    if (!host) {
+        Napi::TypeError::New(env, "Host not created").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+    
+    bool enable = true;
+    if (info.Length() > 0 && info[0].IsBoolean()) {
+        enable = info[0].As<Napi::Boolean>().Value();
+    }
+    
+    if (enable) {
+        int result = enet_host_compress_with_range_coder(host);
+        return Napi::Number::New(env, result);
+    }
+    
+    return Napi::Boolean::New(env, true);
+}
+
+Napi::Value ENetWrapper::SetChecksum(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+    
+    if (!host) {
+        Napi::TypeError::New(env, "Host not created").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+    
+    bool enable = true;
+    if (info.Length() > 0 && info[0].IsBoolean()) {
+        enable = info[0].As<Napi::Boolean>().Value();
+    }
+    
+    if (enable) {
+        host->checksum = enet_crc32;
+    } else {
+        host->checksum = nullptr;
+    }
+    
+    return Napi::Boolean::New(env, true);
+}
+
+Napi::Value ENetWrapper::SetNewPacket(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+    
+    if (!host) {
+        Napi::TypeError::New(env, "Host not created").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+    
+    bool enable = false;
+    bool isServer = false;
+    
+    if (info.Length() > 0 && info[0].IsBoolean()) {
+        enable = info[0].As<Napi::Boolean>().Value();
+    }
+    
+    if (info.Length() > 1 && info[1].IsBoolean()) {
+        isServer = info[1].As<Napi::Boolean>().Value();
+    }
+    
+    if (isServer) {
+        host->usingNewPacketForServer = enable ? 1 : 0;
+    } else {
+        host->usingNewPacket = enable ? 1 : 0;
+    }
+    
+    return Napi::Boolean::New(env, true);
 }
 
 Napi::Object InitAll(Napi::Env env, Napi::Object exports) {
