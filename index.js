@@ -179,6 +179,9 @@ class Server extends ENetBase {
   constructor(options = {}) {
     super();
 
+    // Add ready event type for Server only
+    this.eventCallbacks.ready = [];
+
     // Default configuration
     const config = {
       ip: options.ip || options.address || '127.0.0.1',
@@ -196,8 +199,8 @@ class Server extends ENetBase {
     this.config = config;
     this.initialize();
 
-    // Note: Server creation is now deferred to createServer() method
-    // which should be called after checking port availability
+    // Auto-create server when using new Server() constructor
+    this.createServer();
   }
 
   async createServer() {
@@ -235,9 +238,6 @@ class Server extends ENetBase {
       // Setup host with compression, checksum, and new packet mode
       this.setupHost(this.config, true);
 
-      console.log(
-        `Server created successfully on ${this.config.ip}:${this.config.port}`,
-      );
       return true;
     } catch (err) {
       this.emit('error', err);
@@ -250,6 +250,32 @@ class Server extends ENetBase {
     const server = new Server(options);
     await server.createServer();
     return server;
+  }
+
+  // Method to start server and emit ready event
+  async start() {
+    try {
+      await this.createServer();
+      // Emit ready event after successful creation
+      process.nextTick(() => {
+        this.emit('ready');
+      });
+      return this.listen();
+    } catch (err) {
+      this.emit('error', err);
+      throw err;
+    }
+  }
+
+  // Override listen method to emit ready event for Server
+  async listen() {
+    // Emit ready event when server starts listening
+    process.nextTick(() => {
+      this.emit('ready');
+    });
+
+    // Call parent listen method
+    return super.listen();
   }
 }
 
