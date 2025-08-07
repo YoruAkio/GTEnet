@@ -1,29 +1,34 @@
-# ENetJS
+# 🌐 GTEnet
 
-A Node.js binding for the ENet reliable UDP networking library. This project allows you to use ENet's fast and reliable networking capabilities directly from Node.js.
+A high-performance Node.js binding for the ENet reliable UDP networking library. Built specifically for Growtopia private server development with modern JavaScript APIs. 🚀
 
-## Features
+> [!WARNING]
+> This project is in early development. Expect breaking changes and limited features. Use at your own risk!
+> Tested on:
+> - Linux ( Arch Linux )
+> - Windows ( Soon )
+> - MacOS ( Soon )
 
-- **Reliable UDP**: Get the speed of UDP with the reliability of TCP
-- **Cross-platform**: Works on Linux, Windows, and macOS
-- **Event-driven**: Modern JavaScript API with event callbacks
-- **High Performance**: Direct bindings to the native ENet library
-
-## Installation
-
-First, install the dependencies:
+## 📋 Requirements
 
 ```bash
-npm install
+# Node.js 18.x
+# Python 3.1x
 ```
 
-Then build the native module:
+## 📦 Installation
 
 ```bash
-npm run build
+npm install https://github.com/YoruAkio/GTEnet.git
 ```
 
-## Quick Start
+or with Bun:
+
+```bash
+bun add https://github.com/YoruAkio/GTEnet.git
+```
+
+## 🚀 Quick Start
 
 ### Running the Examples
 
@@ -31,208 +36,104 @@ Start a server:
 
 ```bash
 npm run server
+
+# or
+
+bun run server
 ```
 
 In another terminal, start a client:
 
 ```bash
 npm run client
+
+# or
+
+bun run client
 ```
 
-### Basic Usage
+## 📖 Basic Usage
+
+### 🖥️ Server Example
 
 ```javascript
-import { Client, Server } from './index.js';
+import { Server } from 'gtenet';
 
-// Create a server
-const server = new Server({
-  ip: '127.0.0.1', // optional, default: '127.0.0.1'
-  port: 17091, // optional, default: 17091
-  maxPeer: 32, // optional, default: 32
-  channelLimit: 2, // optional, default: 2
-  usingNewPacketForServer: false, // optional, default: false
-  incomingBandwidth: 0, // optional, default: 0
-  outgoingBandwidth: 0, // optional, default: 0
+// Create a server with automatic port checking
+const server = await Server.create({
+  ip: '127.0.0.1', // Server IP address
+  port: 17091, // Server port
+  maxPeer: 32, // Maximum connected clients
 });
 
 // Set up event handlers with chaining
 server
   .on('connect', event => {
-    console.log('Client connected:', event.peer);
+    console.log('🎉 Client connected:', event.peer);
   })
   .on('disconnect', event => {
-    console.log('Client disconnected:', event.peer);
+    console.log('👋 Client disconnected:', event.peer);
   })
   .on('receive', event => {
-    console.log('Received:', event.data.toString());
-    server.send(event.peer, 0, 'Reply message');
+    console.log('📨 Received:', event.data.toString());
+    // Echo the message back
+    server.send(event.peer, 0, `Echo: ${event.data.toString()}`);
   })
   .on('error', err => {
-    console.error('Server error:', err);
+    console.error('❌ Server error:', err.message);
   });
 
-// Start listening
-server.listen();
+// Start listening for connections
+await server.listen();
+```
+
+### 💻 Client Example
+
+```javascript
+import { Client } from 'gtenet';
 
 // Create a client
 const client = new Client({
-  ip: '127.0.0.1', // optional, default: '127.0.0.1'
-  port: 17091, // optional, default: 17091
-  channelLimit: 2, // optional, default: 2
-  usingNewPacket: false, // optional, default: false
-  incomingBandwidth: 0, // optional, default: 0
-  outgoingBandwidth: 0, // optional, default: 0
+  ip: '127.0.0.1', // Server IP
+  port: 17091, // Server port
 });
 
 // Set up event handlers
 client
   .on('connect', event => {
-    console.log('Connected to server!');
-    client.sendToServer(0, 'Hello Server!');
+    console.log('🔗 Connected to server!');
+    client.sendToServer(0, 'Hello Server! 👋');
   })
   .on('disconnect', event => {
-    console.log('Disconnected from server');
+    console.log('💔 Disconnected from server');
   })
   .on('receive', event => {
-    console.log('Server says:', event.data.toString());
+    console.log('📩 Server says:', event.data.toString());
   })
   .on('error', err => {
-    console.error('Client error:', err);
+    console.error('❌ Client error:', err.message);
   });
 
-// Start listening (connects automatically)
-client.listen();
+// Connect and start listening
+await client.listen();
 ```
 
-## API Reference
+## 📄 License
 
-### Server Class
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for more information.
 
-#### Constructor
+## 🙏 Acknowledgements
 
-```javascript
-new Server(options);
-```
+- 🌐 [ENet](https://github.com/eikarna/enet) - ENet reliable UDP networking library
+- ⚙️ [Node-Addon-API](https://github.com/nodejs/node-addon-api) - Node.js addon API for native modules
+- 🌱 [growtopia.js](https://github.com/StileDevs/growtopia.js) - High-performance Growtopia private server framework
 
-**Options:**
+## 📢 Special Thanks
 
-- `ip` (string): IP address to bind to (default: '127.0.0.1')
-- `port` (number): Port to listen on (default: 17091)
-- `maxPeer` (number): Maximum number of peers (default: 32)
-- `channelLimit` (number): Number of channels (default: 2)
-- `usingNewPacketForServer` (boolean): Enable new packet format (default: false)
-- `incomingBandwidth` (number): Incoming bandwidth limit (default: 0)
-- `outgoingBandwidth` (number): Outgoing bandwidth limit (default: 0)
+Thanks to these people
 
-#### Methods
-
-- `listen()` - Start the server event loop
-- `stop()` - Stop the server
-- `send(peerId, channelId, data, reliable = true)` - Send data to a peer
-- `disconnect(peerId, data = 0)` - Disconnect a peer
-- `on(event, callback)` - Add event listener (chainable)
-
-### Client Class
-
-#### Constructor
-
-```javascript
-new Client(options);
-```
-
-**Options:**
-
-- `ip` (string): Server IP address (default: '127.0.0.1')
-- `port` (number): Server port (default: 17091)
-- `channelLimit` (number): Number of channels (default: 2)
-- `usingNewPacket` (boolean): Enable new packet format (default: false)
-- `incomingBandwidth` (number): Incoming bandwidth limit (default: 0)
-- `outgoingBandwidth` (number): Outgoing bandwidth limit (default: 0)
-
-#### Methods
-
-- `listen()` - Connect to server and start event loop
-- `stop()` - Stop the client
-- `sendToServer(channelId, data, reliable = true)` - Send data to server
-- `disconnectFromServer(data = 0)` - Disconnect from server
-- `on(event, callback)` - Add event listener (chainable)
-
-### Events
-
-Both Client and Server support these events:
-
-- `connect` - Fired when a peer connects
-- `disconnect` - Fired when a peer disconnects
-- `receive` - Fired when data is received
-- `error` - Fired when an error occurs
-
-### Features
-
-- **Automatic Setup**: CRC32 checksums and range coder compression enabled by default
-- **New Packet Support**: Optional support for ENet's new packet format
-- **Error Handling**: Comprehensive error handling with error events
-- **Peer Management**: Automatic peer cleanup on disconnect
-- **Method Chaining**: Event handlers can be chained for cleaner code
-- `destroy()` - Destroy the host
-
-#### Events
-
-- `connect` - Fired when a peer connects
-- `disconnect` - Fired when a peer disconnects
-- `receive` - Fired when data is received
-- `error` - Fired when an error occurs
-
-### Features
-
-- **Automatic Setup**: CRC32 checksums and range coder compression enabled by default
-- **New Packet Support**: Optional support for ENet's new packet format
-- **Error Handling**: Comprehensive error handling with error events
-- **Peer Management**: Automatic peer cleanup on disconnect
-- **Method Chaining**: Event handlers can be chained for cleaner code
-
-## Development
-
-This project uses node-gyp to build the native addon. The ENet library source is included in the `enet/` directory.
-
-### Building
-
-```bash
-npm run build
-```
-
-### Cleaning
-
-```bash
-npm run clean
-```
-
-## Architecture
-
-- **Native Layer**: C++ bindings in `src/enet_addon.cpp`
-- **JavaScript Layer**: High-level API in `index.js`
-- **ENet Library**: Included C source in `enet/` directory
-- **Build System**: node-gyp configuration in `binding.gyp`
-
-## Troubleshooting
-
-If you encounter build issues:
-
-1. Make sure you have the required build tools:
-
-   ```bash
-   # On Ubuntu/Debian
-   sudo apt-get install build-essential python3-dev
-
-   # On macOS
-   xcode-select --install
-   ```
-
-2. Clean and rebuild:
-   ```bash
-   npm run clean
-   npm run build
-   ```
-
-## License
-
-This project includes the ENet library, which is licensed under the MIT license. See the `enet/LICENSE` file for details.
+ - [@lsalzman](https://github.com/lsalzman)
+ - [@ZtzTopia](https://github.com/ZtzTopia)
+ - [@eikarna](https://github.com/eikarna)
+ - [@StileDevs](https://github.com/StileDevs)
+ - [@JadlionHD](https://github.com/JadlionHD)
