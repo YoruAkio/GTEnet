@@ -1,0 +1,35 @@
+{
+  "name": "enetjs",
+  "version": "0.1.0",
+  "description": "Node.js bindings for the ENet reliable UDP networking library",
+  "main": "index.js",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "node-gyp configure build",
+    "clean": "node-gyp clean",
+    "server": "node server.js",
+    "client": "node client.js"
+  },
+  "dependencies": {
+    "node-addon-api": "^7.1.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "node-gyp": "^10.0.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "gypfile": true,
+  "keywords": [
+    "enet",
+    "networking",
+    "udp",
+    "reliable",
+    "game",
+    "native"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
