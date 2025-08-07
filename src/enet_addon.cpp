@@ -2,6 +2,7 @@
 #include <enet/enet.h>
 #include <memory>
 #include <vector>
+#include <cstdio>
 
 class ENetWrapper : public Napi::ObjectWrap<ENetWrapper> {
 public:
@@ -155,7 +156,7 @@ Napi::Value ENetWrapper::CreateHost(const Napi::CallbackInfo& info) {
     }
     
     host = enet_host_create(
-        isServer ? ENET_ADDRESS_TYPE_IPV4 : ENET_ADDRESS_TYPE_ANY,
+        ENET_ADDRESS_TYPE_IPV4,
         isServer ? &address : nullptr,
         peerCount,
         channelLimit,

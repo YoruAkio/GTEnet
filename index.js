@@ -1,4 +1,6 @@
 import { createRequire } from 'module';
+import { createServer } from 'net';
+import { createSocket } from 'dgram';
 const require = createRequire(import.meta.url);
 
 let enet;
@@ -66,6 +68,27 @@ class ENetBase {
     if (config.usingNewPacket || config.usingNewPacketForServer) {
       this.native.setNewPacket(true, isServer);
     }
+  }
+
+  // Check if a UDP port is available
+  async checkPortAvailable(port, host = '127.0.0.1') {
+    return new Promise(resolve => {
+      const socket = createSocket('udp4');
+
+      socket.bind(port, host, () => {
+        socket.close(() => {
+          resolve(true);
+        });
+      });
+
+      socket.on('error', err => {
+        if (err.code === 'EADDRINUSE') {
+          resolve(false);
+        } else {
+          resolve(false);
+        }
+      });
+    });
   }
 
   service(timeout = 0) {
@@ -158,7 +181,7 @@ class Server extends ENetBase {
 
     // Default configuration
     const config = {
-      ip: options.ip || '127.0.0.1',
+      ip: options.ip || options.address || '127.0.0.1',
       port: options.port || 17091,
       maxPeer: options.maxPeer || 32,
       channelLimit: options.channelLimit || 2,
@@ -172,11 +195,26 @@ class Server extends ENetBase {
 
     this.config = config;
     this.initialize();
-    this.createServer();
+
+    // Note: Server creation is now deferred to createServer() method
+    // which should be called after checking port availability
   }
 
-  createServer() {
+  async createServer() {
     try {
+      // Check if port is available
+      const isPortAvailable = await this.checkPortAvailable(
+        this.config.port,
+        this.config.ip,
+      );
+      if (!isPortAvailable) {
+        const error = new Error(
+          `Port ${this.config.port} is already in use on ${this.config.ip}`,
+        );
+        this.emit('error', error);
+        throw error;
+      }
+
       const hostConfig = {
         address: this.config.ip,
         port: this.config.port,
@@ -196,9 +234,22 @@ class Server extends ENetBase {
 
       // Setup host with compression, checksum, and new packet mode
       this.setupHost(this.config, true);
+
+      console.log(
+        `Server created successfully on ${this.config.ip}:${this.config.port}`,
+      );
+      return true;
     } catch (err) {
       this.emit('error', err);
+      throw err; // Re-throw to prevent silent failures
     }
+  }
+
+  // Static method to create server with port checking
+  static async create(options = {}) {
+    const server = new Server(options);
+    await server.createServer();
+    return server;
   }
 }
 
@@ -209,7 +260,7 @@ class Client extends ENetBase {
 
     // Default configuration
     const config = {
-      ip: options.ip || '127.0.0.1',
+      ip: options.ip || options.address || '127.0.0.1',
       port: options.port || 17091,
       channelLimit: options.channelLimit || 2,
       usingNewPacket:
@@ -240,8 +291,11 @@ class Client extends ENetBase {
 
       // Setup host with compression, checksum, and new packet mode
       this.setupHost(this.config, false);
+
+      console.log('Client created successfully');
     } catch (err) {
       this.emit('error', err);
+      throw err; // Re-throw to prevent silent failures
     }
   }
 
