@@ -1,6 +1,6 @@
 {
-  "name": "enetjs",
-  "version": "0.1.0",
+  "name": "gtenet",
+  "version": "0.1.1",
   "description": "Node.js bindings for the ENet reliable UDP networking library",
   "main": "index.js",
   "type": "module",
@@ -30,6 +30,6 @@
     "game",
     "native"
   ],
-  "author": "Your Name",
+  "author": "Yoru Akio",
   "license": "MIT"
 }
