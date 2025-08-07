@@ -4,13 +4,19 @@
   "description": "Node.js bindings for the ENet reliable UDP networking library",
   "main": "index.js",
   "type": "module",
-  "private": true,
+  "private": false,
   "scripts": {
     "build": "node-gyp configure build",
-    "clean": "node-gyp clean",
-    "server": "node server.js",
-    "client": "node client.js"
+    "clean": "node-gyp clean"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YoruAkio/GTEnet.git"
+  },
+  "bugs": {
+    "url": "https://github.com/YoruAkio/GTEnet/issues"
+  },
+  "homepage": "https://github.com/YoruAkio/GTEnet#readme",
   "dependencies": {
     "node-addon-api": "^7.1.0"
   },
