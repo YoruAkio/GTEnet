@@ -7,7 +7,10 @@
   "private": false,
   "scripts": {
     "build": "node-gyp configure build",
-    "clean": "node-gyp clean"
+    "clean": "node-gyp clean",
+    "postinstall": "npm run build",
+    "prepack": "npm run build",
+    "prepare": "npm run build"
   },
   "repository": {
     "type": "git",
