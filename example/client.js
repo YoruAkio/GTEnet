@@ -1,41 +1,31 @@
-import { Client } from './index.js';
-import { createInterface } from 'readline';
+import { Client } from '../index.js';
 
 // Create a client with configuration
 const client = new Client({
-  ip: '127.0.0.1',
+  ip: '45.77.168.68',
   port: 17091,
-  channelLimit: 2,
-  usingNewPacket: false,
-  incomingBandwidth: 0,
-  outgoingBandwidth: 0,
+  usingNewPacket: true,
 });
 
-const rl = createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
+console.log(`Connecting to ${client.config.ip}:${client.config.port}...`);
 
 // Set up event handlers with chaining
 client
   .on('connect', event => {
     console.log('Connected to server!');
 
-    // Start accepting user input
-    promptForMessage();
+    // sending message to server
+    client.sendToServer(0, 'Hello, world!');
   })
   .on('disconnect', event => {
     console.log(`Disconnected from server, reason: ${event.data}`);
   })
   .on('receive', event => {
     console.log(`Server says: ${event.data.toString()}`);
-    promptForMessage();
   })
   .on('error', err => {
     console.error('Client error:', err.message);
   });
-
-console.log('Connecting to server at 127.0.0.1:17091...');
 
 // Handle graceful shutdown
 process.on('SIGINT', () => {
@@ -44,7 +34,6 @@ process.on('SIGINT', () => {
   client.stop();
   client.destroy();
   client.deinitialize();
-  rl.close();
   process.exit(0);
 });
 
