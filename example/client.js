@@ -13,7 +13,6 @@ console.log(`🔌 Connecting to ${client.config.ip}:${client.config.port}...`);
 client
   .on('connect', event => {
     console.log(`✅ Connected to server! Peer ID: ${event.peer}`);
-    console.log('🎉 Connected to server!');
 
     // sending message to server
     client.sendToServer(0, 'Hello, world!');

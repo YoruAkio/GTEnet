@@ -320,28 +320,24 @@ Napi::Value ENetWrapper::SendPacket(const Napi::CallbackInfo& info) {
     ENetPeer* peer = reinterpret_cast<ENetPeer*>(info[0].As<Napi::Number>().Int64Value());
     enet_uint8 channelID = info[1].As<Napi::Number>().Uint32Value();
     
-    const enet_uint8* data;
-    size_t dataLength;
-    
-    if (info[2].IsBuffer()) {
-        Napi::Buffer<enet_uint8> buffer = info[2].As<Napi::Buffer<enet_uint8>>();
-        data = buffer.Data();
-        dataLength = buffer.Length();
-    } else if (info[2].IsString()) {
-        std::string str = info[2].As<Napi::String>().Utf8Value();
-        data = reinterpret_cast<const enet_uint8*>(str.c_str());
-        dataLength = str.length();
-    } else {
-        Napi::TypeError::New(env, "Data must be a Buffer or string").ThrowAsJavaScriptException();
-        return env.Null();
-    }
-    
     enet_uint32 flags = ENET_PACKET_FLAG_RELIABLE;
     if (info.Length() > 3 && info[3].IsNumber()) {
         flags = info[3].As<Napi::Number>().Uint32Value();
     }
     
-    ENetPacket* packet = enet_packet_create(data, dataLength, flags);
+    ENetPacket* packet = nullptr;
+    
+    if (info[2].IsBuffer()) {
+        Napi::Buffer<enet_uint8> buffer = info[2].As<Napi::Buffer<enet_uint8>>();
+        packet = enet_packet_create(buffer.Data(), buffer.Length(), flags);
+    } else if (info[2].IsString()) {
+        std::string str = info[2].As<Napi::String>().Utf8Value();
+        // Create packet with ENET_PACKET_FLAG_RELIABLE which copies the data
+        packet = enet_packet_create(str.c_str(), str.length(), flags);
+    } else {
+        Napi::TypeError::New(env, "Data must be a Buffer or string").ThrowAsJavaScriptException();
+        return env.Null();
+    }
     if (!packet) {
         Napi::TypeError::New(env, "Failed to create packet").ThrowAsJavaScriptException();
         return env.Null();
