@@ -21,6 +21,7 @@ private:
     Napi::Value Connect(const Napi::CallbackInfo& info);
     Napi::Value Disconnect(const Napi::CallbackInfo& info);
     Napi::Value SendPacket(const Napi::CallbackInfo& info);
+    Napi::Value SendRawPacket(const Napi::CallbackInfo& info);
     Napi::Value SetCompression(const Napi::CallbackInfo& info);
     Napi::Value SetChecksum(const Napi::CallbackInfo& info);
     Napi::Value SetNewPacket(const Napi::CallbackInfo& info);
@@ -43,6 +44,7 @@ Napi::Object ENetWrapper::Init(Napi::Env env, Napi::Object exports) {
         InstanceMethod("connect", &ENetWrapper::Connect),
         InstanceMethod("disconnect", &ENetWrapper::Disconnect),
         InstanceMethod("sendPacket", &ENetWrapper::SendPacket),
+        InstanceMethod("sendRawPacket", &ENetWrapper::SendRawPacket),
         InstanceMethod("setCompression", &ENetWrapper::SetCompression),
         InstanceMethod("setChecksum", &ENetWrapper::SetChecksum),
         InstanceMethod("setNewPacket", &ENetWrapper::SetNewPacket)
@@ -340,6 +342,54 @@ Napi::Value ENetWrapper::SendPacket(const Napi::CallbackInfo& info) {
     }
     if (!packet) {
         Napi::TypeError::New(env, "Failed to create packet").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+    
+    int result = enet_peer_send(peer, channelID, packet);
+    return Napi::Number::New(env, result);
+}
+
+Napi::Value ENetWrapper::SendRawPacket(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+    
+    if (info.Length() < 3 || !info[0].IsNumber() || !info[1].IsNumber()) {
+        Napi::TypeError::New(env, "Expected peer ID, channel ID, and data").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+    
+    ENetPeer* peer = reinterpret_cast<ENetPeer*>(info[0].As<Napi::Number>().Int64Value());
+    enet_uint8 channelID = info[1].As<Napi::Number>().Uint32Value();
+    
+    enet_uint32 flags = ENET_PACKET_FLAG_RELIABLE;
+    if (info.Length() > 3 && info[3].IsNumber()) {
+        flags = info[3].As<Napi::Number>().Uint32Value();
+    }
+    
+    ENetPacket* packet = nullptr;
+    
+    if (info[2].IsBuffer()) {
+        Napi::Buffer<enet_uint8> buffer = info[2].As<Napi::Buffer<enet_uint8>>();
+        // Create packet directly from raw buffer data - this is the "raw" functionality
+        packet = enet_packet_create(buffer.Data(), buffer.Length(), flags);
+    } else if (info[2].IsTypedArray()) {
+        Napi::TypedArray typedArray = info[2].As<Napi::TypedArray>();
+        Napi::ArrayBuffer arrayBuffer = typedArray.ArrayBuffer();
+        
+        // Get the raw data from the typed array
+        uint8_t* data = static_cast<uint8_t*>(arrayBuffer.Data()) + typedArray.ByteOffset();
+        size_t length = typedArray.ByteLength();
+        
+        packet = enet_packet_create(data, length, flags);
+    } else if (info[2].IsArrayBuffer()) {
+        Napi::ArrayBuffer arrayBuffer = info[2].As<Napi::ArrayBuffer>();
+        packet = enet_packet_create(arrayBuffer.Data(), arrayBuffer.ByteLength(), flags);
+    } else {
+        Napi::TypeError::New(env, "Data must be a Buffer, TypedArray, or ArrayBuffer for raw packet").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+    
+    if (!packet) {
+        Napi::TypeError::New(env, "Failed to create raw packet").ThrowAsJavaScriptException();
         return env.Null();
     }
     

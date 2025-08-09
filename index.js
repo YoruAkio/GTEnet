@@ -138,6 +138,15 @@ class ENetBase {
     }
   }
 
+  sendRawPacket(peerId, channelId, data, flags = PACKET_FLAG_RELIABLE) {
+    try {
+      return this.native.sendRawPacket(peerId, channelId, data, flags);
+    } catch (err) {
+      this.emit('error', err);
+      return -1;
+    }
+  }
+
   disconnect(peerId, data = 0) {
     try {
       this.native.disconnect(peerId, data);
@@ -366,6 +375,15 @@ class Client extends ENetBase {
     }
   }
 
+  sendRawToServer(channelId, data, flags = PACKET_FLAG_RELIABLE) {
+    if (this.serverPeer) {
+      return this.sendRawPacket(this.serverPeer, channelId, data, flags);
+    } else {
+      this.emit('error', new Error('Not connected to server'));
+      return -1;
+    }
+  }
+
   disconnectFromServer(data = 0) {
     if (this.serverPeer) {
       this.disconnect(this.serverPeer, data);
@@ -380,6 +398,78 @@ export const PACKET_FLAG_UNSEQUENCED = 2;
 export const PACKET_FLAG_NO_ALLOCATE = 4;
 export const PACKET_FLAG_UNRELIABLE_FRAGMENT = 8;
 export const PACKET_FLAG_SENT = 256;
+
+// Utility functions for raw packet creation
+export class RawPacketBuilder {
+  constructor(size = 1024) {
+    this.buffer = new ArrayBuffer(size);
+    this.view = new DataView(this.buffer);
+    this.offset = 0;
+  }
+
+  // Write methods for different data types
+  writeUint8(value) {
+    this.view.setUint8(this.offset, value);
+    this.offset += 1;
+    return this;
+  }
+
+  writeUint16(value, littleEndian = true) {
+    this.view.setUint16(this.offset, value, littleEndian);
+    this.offset += 2;
+    return this;
+  }
+
+  writeUint32(value, littleEndian = true) {
+    this.view.setUint32(this.offset, value, littleEndian);
+    this.offset += 4;
+    return this;
+  }
+
+  writeFloat32(value, littleEndian = true) {
+    this.view.setFloat32(this.offset, value, littleEndian);
+    this.offset += 4;
+    return this;
+  }
+
+  writeFloat64(value, littleEndian = true) {
+    this.view.setFloat64(this.offset, value, littleEndian);
+    this.offset += 8;
+    return this;
+  }
+
+  writeString(str, encoding = 'utf8') {
+    const encoder = new TextEncoder();
+    const encoded = encoder.encode(str);
+    const uint8Array = new Uint8Array(this.buffer, this.offset);
+    uint8Array.set(encoded);
+    this.offset += encoded.length;
+    return this;
+  }
+
+  writeBytes(bytes) {
+    const uint8Array = new Uint8Array(this.buffer, this.offset);
+    uint8Array.set(bytes);
+    this.offset += bytes.length;
+    return this;
+  }
+
+  // Get the final packet data
+  getPacketData() {
+    return this.buffer.slice(0, this.offset);
+  }
+
+  // Reset for reuse
+  reset() {
+    this.offset = 0;
+    return this;
+  }
+
+  // Get current size
+  size() {
+    return this.offset;
+  }
+}
 
 export { Client, Server };
 export default { Client, Server };
