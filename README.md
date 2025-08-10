@@ -19,13 +19,16 @@ A high-performance Node.js binding for the ENet reliable UDP networking library.
 ## 📦 Installation
 
 ```bash
-npm install https://github.com/YoruAkio/GTEnet.git
+npm install gtenet
 ```
 
 or with Bun:
 
 ```bash
-bun add https://github.com/YoruAkio/GTEnet.git
+bun add gtenet
+
+# you might get message blocked postinstall, you can run it manually
+bun pm trust gtenet
 ```
 
 ## 🚀 Quick Start
@@ -35,21 +38,21 @@ bun add https://github.com/YoruAkio/GTEnet.git
 Start a server:
 
 ```bash
-npm run server
+node run example/server
 
 # or
 
-bun run server
+bun run example/server
 ```
 
 In another terminal, start a client:
 
 ```bash
-npm run client
+node run example/client
 
 # or
 
-bun run client
+bun run example/client
 ```
 
 ## 📖 Basic Usage

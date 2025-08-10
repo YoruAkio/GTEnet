@@ -4,7 +4,6 @@
   "description": "Node.js bindings for the ENet reliable UDP networking library",
   "main": "index.js",
   "type": "module",
-  "private": false,
   "scripts": {
     "build": "node-gyp configure build",
     "clean": "node-gyp clean",
