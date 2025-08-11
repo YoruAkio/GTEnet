@@ -1,5 +1,4 @@
 import { createRequire } from 'module';
-import { createServer } from 'net';
 import { createSocket } from 'dgram';
 const require = createRequire(import.meta.url);
 
@@ -25,6 +24,7 @@ class ENetBase {
       error: [],
     };
     this.running = false;
+    this.hostCreated = false;
   }
 
   initialize() {
@@ -92,6 +92,9 @@ class ENetBase {
   }
 
   service(timeout = 0) {
+    if (!this.hostCreated) {
+      return null;
+    }
     const event = this.native.hostService(timeout);
     if (event) {
       this.handleEvent(event);
@@ -160,6 +163,7 @@ class ENetBase {
     try {
       this.native.destroyHost();
       this.peers.clear();
+      this.hostCreated = false;
     } catch (err) {
       this.emit('error', err);
     }
@@ -207,9 +211,6 @@ class Server extends ENetBase {
 
     this.config = config;
     this.initialize();
-
-    // Auto-create server when using new Server() constructor
-    this.createServer();
   }
 
   async createServer() {
@@ -247,6 +248,8 @@ class Server extends ENetBase {
       // Setup host with compression, checksum, and new packet mode
       this.setupHost(this.config, true);
 
+      this.hostCreated = true;
+
       return true;
     } catch (err) {
       this.emit('error', err);
@@ -263,21 +266,15 @@ class Server extends ENetBase {
 
   // Method to start server and emit ready event
   async start() {
-    try {
-      await this.createServer();
-      // Emit ready event after successful creation
-      process.nextTick(() => {
-        this.emit('ready');
-      });
-      return this.listen();
-    } catch (err) {
-      this.emit('error', err);
-      throw err;
-    }
+    return this.listen();
   }
 
   // Override listen method to emit ready event for Server
   async listen() {
+    if (!this.hostCreated) {
+      await this.createServer();
+    }
+
     // Emit ready event when server starts listening
     process.nextTick(() => {
       this.emit('ready');
@@ -326,6 +323,7 @@ class Client extends ENetBase {
 
       // Setup host with compression, checksum, and new packet mode
       this.setupHost(this.config, false);
+      this.hostCreated = true;
 
       console.log('Client created successfully');
     } catch (err) {
