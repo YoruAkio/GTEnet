@@ -1,6 +1,6 @@
 {
   "name": "gtenet",
-  "version": "0.1.6-dev",
+  "version": "0.1.7-dev",
   "description": "Node.js bindings for the ENet reliable UDP networking library",
   "main": "index.js",
   "types": "index.d.ts",
