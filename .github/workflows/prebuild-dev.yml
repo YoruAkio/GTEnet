@@ -48,6 +48,25 @@ jobs:
       - name: Build prebuilds (N-API)
         run: npm run prebuild
 
+      - name: List prebuilds
+        run: |
+          echo "Generated prebuilds:"
+          find prebuilds -type f -name "*.node" | sort
+          echo "Expected structure for node-gyp-build:"
+          ls -la prebuilds/*/
+
+      - name: Test prebuild loads
+        run: |
+          node -e "
+            try {
+              const addon = require('node-gyp-build')(__dirname);
+              console.log('✅ Prebuild loads successfully');
+            } catch (err) {
+              console.error('❌ Prebuild failed to load:', err.message);
+              process.exit(1);
+            }
+          "
+
       - name: Upload prebuild artifact
         uses: actions/upload-artifact@v4
         with:

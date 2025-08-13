@@ -1,7 +1,7 @@
 {
   "targets": [
     {
-      "target_name": "enet",
+      "target_name": "node",
       "cflags!": [ "-fno-exceptions" ],
       "cflags_cc!": [ "-fno-exceptions" ],
       "sources": [
