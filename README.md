@@ -7,7 +7,7 @@ A high-performance Node.js binding for the ENet reliable UDP networking library.
 > Tested on:
 >
 > - Linux ( Arch Linux )
-> - Windows ( Soon )
+> - Windows ( MSVC & MSYS2 )
 > - MacOS ( Soon )
 
 ## 📋 Requirements
