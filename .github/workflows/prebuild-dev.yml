@@ -74,6 +74,30 @@ jobs:
       - name: Install deps
         run: npm ci
 
+      - name: Check and handle existing version
+        run: |
+          # Get current version
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Current version: $CURRENT_VERSION"
+
+          # Check if version exists on npm
+          if npm view gtenet@$CURRENT_VERSION version >/dev/null 2>&1; then
+            echo "Version $CURRENT_VERSION already exists on npm"
+            echo "Attempting to unpublish existing version..."
+            
+            # Try to unpublish the existing version
+            if npm unpublish gtenet@$CURRENT_VERSION; then
+              echo "Successfully unpublished $CURRENT_VERSION"
+            else
+              echo "Failed to unpublish, trying to deprecate instead..."
+              npm deprecate gtenet@$CURRENT_VERSION "Replaced by newer build" || echo "Deprecation also failed, continuing anyway..."
+            fi
+          else
+            echo "Version $CURRENT_VERSION does not exist on npm"
+          fi
+
+          echo "VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
+
       - name: Create prebuilds directory
         run: mkdir -p prebuilds
 
@@ -107,4 +131,6 @@ jobs:
       - name: Publish with dev tag
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --tag dev
+        run: |
+          echo "Publishing version: $VERSION"
+          npm publish --tag dev
