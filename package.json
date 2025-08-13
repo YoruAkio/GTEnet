@@ -21,14 +21,14 @@
   },
   "homepage": "https://github.com/YoruAkio/GTEnet#readme",
   "dependencies": {
-    "node-addon-api": "^7.1.0"
+    "node-addon-api": "^7.1.1"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "node-gyp": "^10.0.1"
+    "node-gyp": "^10.3.1"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5.9.2"
   },
   "gypfile": true,
   "keywords": [
