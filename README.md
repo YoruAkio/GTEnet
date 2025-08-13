@@ -5,6 +5,7 @@ A high-performance Node.js binding for the ENet reliable UDP networking library.
 > [!WARNING]
 > This project is in early development. Expect breaking changes and limited features. Use at your own risk!
 > Tested on:
+>
 > - Linux ( Arch Linux )
 > - Windows ( Soon )
 > - MacOS ( Soon )
@@ -131,12 +132,12 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for more 
 - ⚙️ [Node-Addon-API](https://github.com/nodejs/node-addon-api) - Node.js addon API for native modules
 - 🌱 [growtopia.js](https://github.com/StileDevs/growtopia.js) - High-performance Growtopia private server framework
 
-## 📢 Special Thanks
+## �📢 Special Thanks
 
 Thanks to these people
 
- - [@lsalzman](https://github.com/lsalzman)
- - [@ZtzTopia](https://github.com/ZtzTopia)
- - [@eikarna](https://github.com/eikarna)
- - [@StileDevs](https://github.com/StileDevs)
- - [@JadlionHD](https://github.com/JadlionHD)
+- [@lsalzman](https://github.com/lsalzman)
+- [@ZtzTopia](https://github.com/ZtzTopia)
+- [@eikarna](https://github.com/eikarna)
+- [@StileDevs](https://github.com/StileDevs)
+- [@JadlionHD](https://github.com/JadlionHD)

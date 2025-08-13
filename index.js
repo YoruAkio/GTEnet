@@ -391,7 +391,7 @@ class Client extends ENetBase {
     await super.listen();
   }
 
-  sendToServer(channelId, data, reliable = true) {
+  send(channelId, data, reliable = true) {
     if (this.serverPeer) {
       return this.send(this.serverPeer, channelId, data, reliable);
     } else {
@@ -400,7 +400,7 @@ class Client extends ENetBase {
     }
   }
 
-  sendRawToServer(channelId, data, flags = PACKET_FLAG_RELIABLE) {
+  sendRaw(channelId, data, flags = PACKET_FLAG_RELIABLE) {
     if (this.serverPeer) {
       return this.sendRawPacket(this.serverPeer, channelId, data, flags);
     } else {
@@ -409,7 +409,7 @@ class Client extends ENetBase {
     }
   }
 
-  disconnectFromServer(data = 0) {
+  disconnect(data = 0) {
     if (this.serverPeer) {
       this.disconnect(this.serverPeer, data);
       this.serverPeer = null;
