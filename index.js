@@ -4,6 +4,7 @@ const require = createRequire(import.meta.url);
 
 let enet;
 try {
+  // @note load native addon (node-gyp build output)
   enet = require('./build/Release/enet.node');
 } catch (err) {
   console.error(
@@ -12,9 +13,12 @@ try {
   throw err;
 }
 
-// Base class for common functionality
+/**
+ * base wrapper for common enet host/peer management and event dispatch
+*/
 class ENetBase {
   constructor() {
+    // @note set up native handle, peer map, and event callback registry
     this.native = new enet.ENet();
     this.peers = new Map();
     this.eventCallbacks = {
@@ -44,7 +48,8 @@ class ENetBase {
     if (this.eventCallbacks[eventType]) {
       this.eventCallbacks[eventType].push(callback);
     }
-    return this; // For chaining
+    // @note chainable api
+    return this;
   }
 
   emit(eventType, data) {
@@ -60,17 +65,17 @@ class ENetBase {
   }
 
   setupHost(config, isServer = false) {
-    // Set compression and checksum
+    // @note enable compression and checksum
     this.native.setCompression(true);
     this.native.setChecksum(true);
 
-    // Set new packet mode
+    // @note optionally enable new packet mode
     if (config.usingNewPacket || config.usingNewPacketForServer) {
       this.native.setNewPacket(true, isServer);
     }
   }
 
-  // Check if a UDP port is available
+  // @note check if a udp port is available
   async checkPortAvailable(port, host = '127.0.0.1') {
     return new Promise(resolve => {
       const socket = createSocket('udp4');
@@ -92,6 +97,7 @@ class ENetBase {
   }
 
   service(timeout = 0) {
+    // @note poll native host and forward events
     if (!this.hostCreated) {
       return null;
     }
@@ -103,6 +109,7 @@ class ENetBase {
   }
 
   handleEvent(event) {
+    // @note update internal state and re-emit
     try {
       switch (event.type) {
         case 'connect':
@@ -115,7 +122,7 @@ class ENetBase {
           if (this.peers.has(event.peer)) {
             const peer = this.peers.get(event.peer);
             peer.connected = false;
-            // Clean up peer data
+            // @note remove peer record
             this.peers.delete(event.peer);
           }
           this.emit('disconnect', event);
@@ -133,7 +140,8 @@ class ENetBase {
 
   send(peerId, channelId, data, reliable = true) {
     try {
-      const flags = reliable ? 1 : 0; // ENET_PACKET_FLAG_RELIABLE = 1
+      // @note enet reliable flag is 1; 0 is unreliable
+      const flags = reliable ? 1 : 0;
       return this.native.sendPacket(peerId, channelId, data, flags);
     } catch (err) {
       this.emit('error', err);
@@ -142,6 +150,7 @@ class ENetBase {
   }
 
   sendRawPacket(peerId, channelId, data, flags = PACKET_FLAG_RELIABLE) {
+    // @note send raw binary payload (Buffer/TypedArray/ArrayBuffer)
     try {
       return this.native.sendRawPacket(peerId, channelId, data, flags);
     } catch (err) {
@@ -151,6 +160,7 @@ class ENetBase {
   }
 
   disconnect(peerId, data = 0) {
+    // @note request graceful disconnect and clean up
     try {
       this.native.disconnect(peerId, data);
       this.peers.delete(peerId);
@@ -160,6 +170,7 @@ class ENetBase {
   }
 
   destroy() {
+    // @note destroy host and reset local state
     try {
       this.native.destroyHost();
       this.peers.clear();
@@ -170,6 +181,7 @@ class ENetBase {
   }
 
   async listen() {
+    // @note simple loop: poll service and yield briefly
     this.running = true;
     while (this.running) {
       try {
@@ -183,19 +195,22 @@ class ENetBase {
   }
 
   stop() {
+    // @note stop listen loop
     this.running = false;
   }
 }
 
-// Server class
+/**
+ * enet server: create host bound to address/port and accept peers
+*/
 class Server extends ENetBase {
   constructor(options = {}) {
     super();
 
-    // Add ready event type for Server only
+    // @note add 'ready' event for server lifecycle
     this.eventCallbacks.ready = [];
 
-    // Default configuration
+    // @note default configuration
     const config = {
       ip: options.ip || options.address || '127.0.0.1',
       port: options.port || 17091,
@@ -215,7 +230,7 @@ class Server extends ENetBase {
 
   async createServer() {
     try {
-      // Check if port is available
+      // @note ensure port is free before binding
       const isPortAvailable = await this.checkPortAvailable(
         this.config.port,
         this.config.ip,
@@ -245,7 +260,7 @@ class Server extends ENetBase {
         throw new Error('Failed to create server host');
       }
 
-      // Setup host with compression, checksum, and new packet mode
+      // @note apply compression/checksum/new packet options
       this.setupHost(this.config, true);
 
       this.hostCreated = true;
@@ -253,44 +268,47 @@ class Server extends ENetBase {
       return true;
     } catch (err) {
       this.emit('error', err);
-      throw err; // Re-throw to prevent silent failures
+      // @note rethrow so caller can handle
+      throw err;
     }
   }
 
-  // Static method to create server with port checking
+  // @note convenience helper to create and initialize server
   static async create(options = {}) {
     const server = new Server(options);
     await server.createServer();
     return server;
   }
 
-  // Method to start server and emit ready event
+  // @note start server loop
   async start() {
     return this.listen();
   }
 
-  // Override listen method to emit ready event for Server
+  // @note override to emit 'ready' when listening
   async listen() {
     if (!this.hostCreated) {
       await this.createServer();
     }
 
-    // Emit ready event when server starts listening
+    // @note signal readiness on next tick
     process.nextTick(() => {
       this.emit('ready');
     });
 
-    // Call parent listen method
+    // @note delegate to base loop
     return super.listen();
   }
 }
 
-// Client class
+/**
+ * enet client: create unbound host and connect to server
+*/
 class Client extends ENetBase {
   constructor(options = {}) {
     super();
 
-    // Default configuration
+    // @note default configuration
     const config = {
       ip: options.ip || options.address || '127.0.0.1',
       port: options.port || 17091,
@@ -321,14 +339,15 @@ class Client extends ENetBase {
         throw new Error('Failed to create client host');
       }
 
-      // Setup host with compression, checksum, and new packet mode
+      // @note apply compression/checksum/new packet options
       this.setupHost(this.config, false);
       this.hostCreated = true;
 
       console.log('Client created successfully');
     } catch (err) {
       this.emit('error', err);
-      throw err; // Re-throw to prevent silent failures
+      // @note rethrow so caller can handle
+      throw err;
     }
   }
 
@@ -357,10 +376,10 @@ class Client extends ENetBase {
   }
 
   async listen() {
-    // Connect to server first
+    // @note connect first
     this.connect();
 
-    // Start event loop
+    // @note then start event loop
     await super.listen();
   }
 
@@ -390,14 +409,16 @@ class Client extends ENetBase {
   }
 }
 
-// Constants for packet flags
+// @note packet flag constants
 export const PACKET_FLAG_RELIABLE = 1;
 export const PACKET_FLAG_UNSEQUENCED = 2;
 export const PACKET_FLAG_NO_ALLOCATE = 4;
 export const PACKET_FLAG_UNRELIABLE_FRAGMENT = 8;
 export const PACKET_FLAG_SENT = 256;
 
-// Utility functions for raw packet creation
+/**
+ * helper to build raw binary payloads for sendRawPacket
+*/
 export class RawPacketBuilder {
   constructor(size = 1024) {
     this.buffer = new ArrayBuffer(size);
@@ -405,7 +426,7 @@ export class RawPacketBuilder {
     this.offset = 0;
   }
 
-  // Write methods for different data types
+  // @note write helpers for primitive types
   writeUint8(value) {
     this.view.setUint8(this.offset, value);
     this.offset += 1;
@@ -452,18 +473,18 @@ export class RawPacketBuilder {
     return this;
   }
 
-  // Get the final packet data
+  // @note get final packet data up to offset
   getPacketData() {
     return this.buffer.slice(0, this.offset);
   }
 
-  // Reset for reuse
+  // @note reset for reuse
   reset() {
     this.offset = 0;
     return this;
   }
 
-  // Get current size
+  // @note current size in bytes
   size() {
     return this.offset;
   }
