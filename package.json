@@ -9,7 +9,7 @@
     "build": "node-gyp rebuild",
     "clean": "node-gyp clean",
     "install": "node-gyp-build",
-    "prebuild": "prebuildify --napi --strip",
+    "prebuild": "prebuildify --napi --strip --tag-prefix=v --tag-uv=false",
     "prepack": "npm run prebuild"
   },
   "repository": {

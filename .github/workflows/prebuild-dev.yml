@@ -110,17 +110,28 @@ jobs:
       - name: Merge prebuilds
         run: |
           echo "Merging prebuilds from all platforms..."
-          find ./artifacts -name "*.node" -type f | while read file; do
-            platform=$(echo "$file" | sed -n 's|.*prebuilds-\([^/]*\)/.*|\1|p')
-            echo "Processing: $file for platform: $platform"
-            mkdir -p "prebuilds/$platform"
-            cp "$file" "prebuilds/$platform/"
+          # Ensure prebuilds directory exists
+          mkdir -p prebuilds
+
+          # Copy each platform's prebuilds maintaining the correct structure
+          for artifact_dir in ./artifacts/prebuilds-*; do
+            if [ -d "$artifact_dir" ]; then
+              echo "Copying from: $artifact_dir"
+              # Copy all files recursively, preserving directory structure
+              cp -r "$artifact_dir"/* prebuilds/ 2>/dev/null || true
+            fi
           done
+
+          # Verify the structure matches what node-gyp-build expects
+          echo "Checking prebuild structure..."
+          find prebuilds -name "*.node" | head -5
 
       - name: List bundled prebuilds
         run: |
           echo "Final prebuilds structure:"
-          find prebuilds -type f -name "*.node" | sort
+          find prebuilds -type f | sort
+          echo "Directory structure:"
+          ls -la prebuilds/*/
 
       - name: Configure npm auth
         env:

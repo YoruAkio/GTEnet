@@ -1,0 +1,31 @@
+# Build and development files
+build/
+node_modules/
+*.log
+.git/
+.github/
+.vscode/
+
+# Source files (not needed in published package)
+example/
+
+# Test files
+test/
+tests/
+*.test.js
+*.spec.js
+
+# Development configuration
+.babelrc
+.eslintrc
+.prettierrc
+tsconfig.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Lock files (users should generate their own)
+package-lock.json
+yarn.lock
+bun.lockb
