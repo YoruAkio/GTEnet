@@ -12,15 +12,18 @@ try {
   // @note falls back to building if no prebuild is available when paired with install script
   enet = require('node-gyp-build')(__dirname);
 } catch (err) {
-  console.error(
-    'Failed to load ENet native module. ensure a prebuilt exists or build locally.',
-  );
+  console.error('Failed to load ENet native module.', 'This usually means:');
+  console.error('1. No prebuilt binary available for your platform');
+  console.error('2. Missing build tools for local compilation');
+  console.error('3. Package installation was incomplete');
+  console.error('\nTry running: npm rebuild gtenet');
+  console.error('Or install build tools and run: npm run build');
   throw err;
 }
 
 /**
  * base wrapper for common enet host/peer management and event dispatch
-*/
+ */
 class ENetBase {
   constructor() {
     // @note set up native handle, peer map, and event callback registry
@@ -207,7 +210,7 @@ class ENetBase {
 
 /**
  * enet server: create host bound to address/port and accept peers
-*/
+ */
 class Server extends ENetBase {
   constructor(options = {}) {
     super();
@@ -308,7 +311,7 @@ class Server extends ENetBase {
 
 /**
  * enet client: create unbound host and connect to server
-*/
+ */
 class Client extends ENetBase {
   constructor(options = {}) {
     super();
@@ -423,7 +426,7 @@ export const PACKET_FLAG_SENT = 256;
 
 /**
  * helper to build raw binary payloads for sendRawPacket
-*/
+ */
 export class RawPacketBuilder {
   constructor(size = 1024) {
     this.buffer = new ArrayBuffer(size);
