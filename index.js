@@ -1,14 +1,19 @@
 import { createRequire } from 'module';
 import { createSocket } from 'dgram';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 const require = createRequire(import.meta.url);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 let enet;
 try {
-  // @note load native addon (node-gyp build output)
-  enet = require('./build/Release/enet.node');
+  // @note load native addon via node-gyp-build (uses prebuilds or local build)
+  // @note falls back to building if no prebuild is available when paired with install script
+  enet = require('node-gyp-build')(__dirname);
 } catch (err) {
   console.error(
-    'Failed to load ENet native module. Please run "npm run build" first.',
+    'Failed to load ENet native module. ensure a prebuilt exists or build locally.',
   );
   throw err;
 }

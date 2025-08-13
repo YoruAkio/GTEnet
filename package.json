@@ -1,16 +1,16 @@
 {
   "name": "gtenet",
-  "version": "0.1.4",
+  "version": "0.1.5-dev",
   "description": "Node.js bindings for the ENet reliable UDP networking library",
   "main": "index.js",
   "types": "index.d.ts",
   "type": "module",
   "scripts": {
-    "build": "node-gyp configure build",
+    "build": "node-gyp rebuild",
     "clean": "node-gyp clean",
-    "postinstall": "npm run build",
-    "prepack": "npm run build",
-    "prepare": "npm run build"
+    "install": "node-gyp-build",
+    "prebuild": "prebuildify --napi --strip",
+    "prepack": "npm run prebuild"
   },
   "repository": {
     "type": "git",
@@ -21,11 +21,13 @@
   },
   "homepage": "https://github.com/YoruAkio/GTEnet#readme",
   "dependencies": {
-    "node-addon-api": "^7.1.1"
+    "node-addon-api": "^7.1.1",
+    "node-gyp-build": "^4.8.0"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "node-gyp": "^10.3.1"
+    "node-gyp": "^10.3.1",
+    "prebuildify": "^6.0.1"
   },
   "peerDependencies": {
     "typescript": "^5.9.2"
@@ -40,5 +42,15 @@
     "native"
   ],
   "author": "Yoru Akio",
-  "license": "MIT"
+  "license": "MIT",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "binding.gyp",
+    "src/**",
+    "enet/**",
+    "prebuilds/**",
+    "README.md",
+    "LICENSE"
+  ]
 }
