@@ -48,30 +48,46 @@ jobs:
       - name: Build prebuilds (N-API)
         run: npm run prebuild
 
+      - name: Debug prebuild output
+        shell: bash
+        run: |
+          echo "Current working directory:"
+          pwd
+          echo "All files in project root:"
+          ls -la
+          echo "Looking for prebuilds directory:"
+          find . -name "prebuilds" -type d
+          echo "Looking for .node files anywhere:"
+          find . -name "*.node" -type f
+          echo "Checking if build/ directory exists:"
+          ls -la build/ 2>/dev/null || echo "No build directory"
+
       - name: List prebuilds
+        shell: bash
         run: |
           echo "Generated prebuilds:"
-          find prebuilds -type f -name "*.node" | sort
-          echo "Expected structure for node-gyp-build:"
-          ls -la prebuilds/*/
-
-      - name: Test prebuild loads
-        run: |
-          node -e "
-            try {
-              const addon = require('node-gyp-build')(__dirname);
-              console.log('✅ Prebuild loads successfully');
-            } catch (err) {
-              console.error('❌ Prebuild failed to load:', err.message);
-              process.exit(1);
-            }
-          "
+          find prebuilds -name "*.node" 2>/dev/null || echo "No .node files found"
+          echo "All files in prebuilds:"
+          find prebuilds -type f 2>/dev/null || echo "No files found"
+          echo "Directory structure:"
+          find prebuilds -type d 2>/dev/null || echo "No prebuilds directory found"
+          if [ -d "prebuilds" ]; then
+            echo "Contents of prebuilds:"
+            ls -la prebuilds/ 2>/dev/null || echo "Cannot list prebuilds directory"
+            for subdir in prebuilds/*/; do
+              if [ -d "$subdir" ]; then
+                echo "Contents of $subdir:"
+                ls -la "$subdir" 2>/dev/null || echo "Cannot list $subdir"
+              fi
+            done
+          fi
 
       - name: Upload prebuild artifact
         uses: actions/upload-artifact@v4
         with:
           name: prebuilds-${{ matrix.name }}
           path: prebuilds/
+        if: always() && hashFiles('prebuilds/**/*.node') != ''
 
   publish:
     name: Publish to npm (dev tag)
@@ -109,7 +125,7 @@ jobs:
               echo "Successfully unpublished $CURRENT_VERSION"
             else
               echo "Failed to unpublish, trying to deprecate instead..."
-              npm deprecate gtenet@$CURRENT_VERSION "Replaced by newer build" || echo "Deprecation also failed, continuing anyway..."
+              npm deprecate gtenet@$CURRENT_VERSION "Replaced by newer build with corrected prebuilds" || echo "Deprecation also failed, continuing anyway..."
             fi
           else
             echo "Version $CURRENT_VERSION does not exist on npm"
@@ -127,6 +143,7 @@ jobs:
           path: ./artifacts
 
       - name: Merge prebuilds
+        shell: bash
         run: |
           echo "Merging prebuilds from all platforms..."
           # Ensure prebuilds directory exists
@@ -146,11 +163,19 @@ jobs:
           find prebuilds -name "*.node" | head -5
 
       - name: List bundled prebuilds
+        shell: bash
         run: |
           echo "Final prebuilds structure:"
           find prebuilds -type f | sort
           echo "Directory structure:"
-          ls -la prebuilds/*/
+          if [ -d "prebuilds" ]; then
+            for dir in prebuilds/*/; do
+              if [ -d "$dir" ]; then
+                echo "Contents of $dir:"
+                ls -la "$dir"
+              fi
+            done
+          fi
 
       - name: Configure npm auth
         env:

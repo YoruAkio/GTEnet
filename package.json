@@ -1,6 +1,6 @@
 {
   "name": "gtenet",
-  "version": "0.1.5-dev.0",
+  "version": "0.1.7-dev.2",
   "description": "Node.js bindings for the ENet reliable UDP networking library",
   "main": "index.js",
   "types": "index.d.ts",
@@ -9,7 +9,7 @@
     "build": "node-gyp rebuild",
     "clean": "node-gyp clean",
     "postinstall": "node-gyp-build",
-    "prebuild": "prebuildify --napi --strip --napi-version 6"
+    "prebuild": "prebuildify --napi --strip --target 18.0.0 --target 20.0.0 --target 22.0.0"
   },
   "repository": {
     "type": "git",
