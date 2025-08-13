@@ -52,7 +52,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: prebuilds-${{ matrix.name }}
-          path: prebuilds/**
+          path: prebuilds/
 
   publish:
     name: Publish to npm (dev tag)
@@ -74,17 +74,29 @@ jobs:
       - name: Install deps
         run: npm ci
 
+      - name: Create prebuilds directory
+        run: mkdir -p prebuilds
+
       - name: Download all prebuild artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: prebuilds-*
-          merge-multiple: true
-          path: ./
+          path: ./artifacts
+
+      - name: Merge prebuilds
+        run: |
+          echo "Merging prebuilds from all platforms..."
+          find ./artifacts -name "*.node" -type f | while read file; do
+            platform=$(echo "$file" | sed -n 's|.*prebuilds-\([^/]*\)/.*|\1|p')
+            echo "Processing: $file for platform: $platform"
+            mkdir -p "prebuilds/$platform"
+            cp "$file" "prebuilds/$platform/"
+          done
 
       - name: List bundled prebuilds
         run: |
-          echo "Prebuilds content:";
-          ls -R prebuilds || true
+          echo "Final prebuilds structure:"
+          find prebuilds -type f -name "*.node" | sort
 
       - name: Configure npm auth
         env:
@@ -96,5 +108,3 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --tag dev
-
-
