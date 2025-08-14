@@ -326,6 +326,8 @@ Napi::Value ENetWrapper::SendPacket(const Napi::CallbackInfo& info) {
     if (info.Length() > 3 && info[3].IsNumber()) {
         flags = info[3].As<Napi::Number>().Uint32Value();
     }
+    // @note disallow NO_ALLOCATE to avoid unsafe zero-copy from JS memory
+    flags &= ~ENET_PACKET_FLAG_NO_ALLOCATE;
     
     ENetPacket* packet = nullptr;
     
@@ -367,6 +369,8 @@ Napi::Value ENetWrapper::SendRawPacket(const Napi::CallbackInfo& info) {
     if (info.Length() > 3 && info[3].IsNumber()) {
         flags = info[3].As<Napi::Number>().Uint32Value();
     }
+    // @note disallow NO_ALLOCATE to avoid unsafe zero-copy from JS memory
+    flags &= ~ENET_PACKET_FLAG_NO_ALLOCATE;
     
     ENetPacket* packet = nullptr;
     
@@ -419,9 +423,10 @@ Napi::Value ENetWrapper::SetCompression(const Napi::CallbackInfo& info) {
     if (enable) {
         int result = enet_host_compress_with_range_coder(host);
         return Napi::Number::New(env, result);
+    } else {
+        enet_host_compress(host, NULL);
+        return Napi::Boolean::New(env, true);
     }
-    
-    return Napi::Boolean::New(env, true);
 }
 
 Napi::Value ENetWrapper::SetChecksum(const Napi::CallbackInfo& info) {
