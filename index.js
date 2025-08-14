@@ -213,13 +213,19 @@ class ENetBase {
     }
   }
 
-  async listen(pollIntervalMs = 2) {
+  async listen(pollIntervalMs = 2, maxPollIntervalMs = 32) {
     // @note simple loop: poll service and yield briefly (configurable interval)
     this.running = true;
+    let currentInterval = pollIntervalMs;
     while (this.running) {
       try {
-        this.service(pollIntervalMs);
-        await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
+        const event = this.service(currentInterval);
+        if (event) {
+          currentInterval = pollIntervalMs;
+        } else {
+          currentInterval = Math.min(currentInterval * 2, maxPollIntervalMs);
+        }
+        await new Promise(resolve => setTimeout(resolve, currentInterval));
       } catch (err) {
         this.emit('error', err);
         break;
@@ -230,6 +236,15 @@ class ENetBase {
   stop() {
     // @note stop listen loop
     this.running = false;
+  }
+
+  flush() {
+    // @note flush outgoing commands immediately
+    try {
+      this.native.flush();
+    } catch (err) {
+      this.emit('error', err);
+    }
   }
 }
 
@@ -326,12 +341,7 @@ class Server extends ENetBase {
   }
 
   // @note start server loop
-  async start() {
-    return this.listen();
-  }
-
-  // @note override to emit 'ready' when listening
-  async listen(pollIntervalMs = 2) {
+  async listen(pollIntervalMs = 2, maxPollIntervalMs = 32) {
     if (!this.hostCreated) {
       await this.createServer();
     }
@@ -342,7 +352,7 @@ class Server extends ENetBase {
     });
 
     // @note delegate to base loop
-    return super.listen(pollIntervalMs);
+    return super.listen(pollIntervalMs, maxPollIntervalMs);
   }
 }
 

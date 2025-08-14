@@ -45,6 +45,7 @@ private:
     Napi::Value CreateHost(const Napi::CallbackInfo& info);
     Napi::Value DestroyHost(const Napi::CallbackInfo& info);
     Napi::Value HostService(const Napi::CallbackInfo& info);
+    Napi::Value Flush(const Napi::CallbackInfo& info);
     Napi::Value Connect(const Napi::CallbackInfo& info);
     Napi::Value Disconnect(const Napi::CallbackInfo& info);
     Napi::Value SendPacket(const Napi::CallbackInfo& info);
@@ -68,6 +69,7 @@ Napi::Object ENetWrapper::Init(Napi::Env env, Napi::Object exports) {
         InstanceMethod("createHost", &ENetWrapper::CreateHost),
         InstanceMethod("destroyHost", &ENetWrapper::DestroyHost),
         InstanceMethod("hostService", &ENetWrapper::HostService),
+        InstanceMethod("flush", &ENetWrapper::Flush),
         InstanceMethod("connect", &ENetWrapper::Connect),
         InstanceMethod("disconnect", &ENetWrapper::Disconnect),
         InstanceMethod("sendPacket", &ENetWrapper::SendPacket),
@@ -288,6 +290,16 @@ Napi::Value ENetWrapper::HostService(const Napi::CallbackInfo& info) {
     }
     
     return eventObj;
+}
+
+Napi::Value ENetWrapper::Flush(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+    if (!host) {
+        Napi::TypeError::New(env, "Host not created").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+    enet_host_flush(host);
+    return env.Undefined();
 }
 
 Napi::Value ENetWrapper::Connect(const Napi::CallbackInfo& info) {

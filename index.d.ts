@@ -71,7 +71,7 @@ export class Server {
 
   // @note host/event loop
   service(timeout?: number): ENetEvent | null;
-  listen(): Promise<void>;
+  listen(pollIntervalMs?: number, maxPollIntervalMs?: number): Promise<void>;
   stop(): void;
 
   // @note server setup
@@ -108,6 +108,7 @@ export class Client {
   // @note host/event loop
   service(timeout?: number): ENetEvent | null;
   stop(): void;
+  flush(): void;
 
   // @note connection helpers
   connect(options?: { timeoutMs?: number }): Promise<void>;
