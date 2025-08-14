@@ -317,8 +317,8 @@ Napi::Value ENetWrapper::Connect(const Napi::CallbackInfo& info) {
 Napi::Value ENetWrapper::Disconnect(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
     
-    if (info.Length() < 1 || !info[0].IsNumber()) {
-        Napi::TypeError::New(env, "Expected peer ID").ThrowAsJavaScriptException();
+    if (info.Length() < 1 || !(info[0].IsBigInt() || info[0].IsNumber())) {
+        Napi::TypeError::New(env, "Expected peer ID (bigint or number)").ThrowAsJavaScriptException();
         return env.Null();
     }
     
@@ -341,8 +341,8 @@ Napi::Value ENetWrapper::Disconnect(const Napi::CallbackInfo& info) {
 Napi::Value ENetWrapper::SendPacket(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
     
-    if (info.Length() < 3 || !info[0].IsNumber() || !info[1].IsNumber()) {
-        Napi::TypeError::New(env, "Expected peer ID, channel ID, and data").ThrowAsJavaScriptException();
+    if (info.Length() < 3 || !(info[0].IsBigInt() || info[0].IsNumber()) || !info[1].IsNumber()) {
+        Napi::TypeError::New(env, "Expected peer ID (bigint), channel ID, and data").ThrowAsJavaScriptException();
         return env.Null();
     }
     
@@ -389,8 +389,8 @@ Napi::Value ENetWrapper::SendPacket(const Napi::CallbackInfo& info) {
 Napi::Value ENetWrapper::SendRawPacket(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
     
-    if (info.Length() < 3 || !info[0].IsNumber() || !info[1].IsNumber()) {
-        Napi::TypeError::New(env, "Expected peer ID, channel ID, and data").ThrowAsJavaScriptException();
+    if (info.Length() < 3 || !(info[0].IsBigInt() || info[0].IsNumber()) || !info[1].IsNumber()) {
+        Napi::TypeError::New(env, "Expected peer ID (bigint), channel ID, and data").ThrowAsJavaScriptException();
         return env.Null();
     }
     
