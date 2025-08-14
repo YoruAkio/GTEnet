@@ -190,13 +190,13 @@ class ENetBase {
     }
   }
 
-  async listen() {
-    // @note simple loop: poll service and yield briefly
+  async listen(pollIntervalMs = 2) {
+    // @note simple loop: poll service and yield briefly (configurable interval)
     this.running = true;
     while (this.running) {
       try {
-        this.service(1);
-        await new Promise(resolve => setTimeout(resolve, 1));
+        this.service(pollIntervalMs);
+        await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
       } catch (err) {
         this.emit('error', err);
         break;
@@ -296,7 +296,7 @@ class Server extends ENetBase {
   }
 
   // @note override to emit 'ready' when listening
-  async listen() {
+  async listen(pollIntervalMs = 2) {
     if (!this.hostCreated) {
       await this.createServer();
     }
@@ -307,7 +307,7 @@ class Server extends ENetBase {
     });
 
     // @note delegate to base loop
-    return super.listen();
+    return super.listen(pollIntervalMs);
   }
 }
 
