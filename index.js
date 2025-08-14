@@ -375,7 +375,7 @@ class Client extends ENetBase {
       );
 
       if (peerId) {
-        this.serverPeer = peerId;
+        this.serverPeer = peerId; // bigint from native
         this.peers.set(peerId, {
           address: this.config.ip,
           port: this.config.port,
