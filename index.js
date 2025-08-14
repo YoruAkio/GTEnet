@@ -96,8 +96,10 @@ class ENetBase {
 
       socket.on('error', err => {
         if (err.code === 'EADDRINUSE') {
+          try { socket.close(); } catch {}
           resolve(false);
         } else {
+          try { socket.close(); } catch {}
           resolve(false);
         }
       });
