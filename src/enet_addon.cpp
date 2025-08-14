@@ -3,6 +3,28 @@
 #include <memory>
 #include <vector>
 #include <cstdio>
+// @note bigint-safe peer id handling
+#include <cstdint>
+
+static ENetPeer* JsValueToPeer(const Napi::Value& value, bool& outOk) {
+    outOk = false;
+    if (value.IsBigInt()) {
+        bool lossless = false;
+        uint64_t id = value.As<Napi::BigInt>().Uint64Value(&lossless);
+        if (!lossless) {
+            return nullptr;
+        }
+        outOk = true;
+        return reinterpret_cast<ENetPeer*>(static_cast<uintptr_t>(id));
+    }
+    if (value.IsNumber()) {
+        // @note legacy support (unsafe but tolerated): accept 53-bit numbers
+        uint64_t id = static_cast<uint64_t>(value.As<Napi::Number>().Int64Value());
+        outOk = true;
+        return reinterpret_cast<ENetPeer*>(static_cast<uintptr_t>(id));
+    }
+    return nullptr;
+}
 
 class ENetWrapper : public Napi::ObjectWrap<ENetWrapper> {
 public:
@@ -215,18 +237,18 @@ Napi::Value ENetWrapper::HostService(const Napi::CallbackInfo& info) {
     switch (event.type) {
         case ENET_EVENT_TYPE_CONNECT:
             eventObj.Set("type", "connect");
-            eventObj.Set("peer", Napi::Number::New(env, reinterpret_cast<uintptr_t>(event.peer)));
+            eventObj.Set("peer", Napi::BigInt::New(env, static_cast<uint64_t>(reinterpret_cast<uintptr_t>(event.peer)))));
             break;
             
         case ENET_EVENT_TYPE_DISCONNECT:
             eventObj.Set("type", "disconnect");
-            eventObj.Set("peer", Napi::Number::New(env, reinterpret_cast<uintptr_t>(event.peer)));
+            eventObj.Set("peer", Napi::BigInt::New(env, static_cast<uint64_t>(reinterpret_cast<uintptr_t>(event.peer)))));
             eventObj.Set("data", Napi::Number::New(env, event.data));
             break;
             
         case ENET_EVENT_TYPE_RECEIVE:
             eventObj.Set("type", "receive");
-            eventObj.Set("peer", Napi::Number::New(env, reinterpret_cast<uintptr_t>(event.peer)));
+            eventObj.Set("peer", Napi::BigInt::New(env, static_cast<uint64_t>(reinterpret_cast<uintptr_t>(event.peer)))));
             eventObj.Set("channelID", Napi::Number::New(env, event.channelID));
             
             // Convert packet data to Buffer
@@ -289,7 +311,7 @@ Napi::Value ENetWrapper::Connect(const Napi::CallbackInfo& info) {
         return env.Null();
     }
     
-    return Napi::Number::New(env, reinterpret_cast<uintptr_t>(peer));
+    return Napi::BigInt::New(env, static_cast<uint64_t>(reinterpret_cast<uintptr_t>(peer)));
 }
 
 Napi::Value ENetWrapper::Disconnect(const Napi::CallbackInfo& info) {
@@ -300,7 +322,12 @@ Napi::Value ENetWrapper::Disconnect(const Napi::CallbackInfo& info) {
         return env.Null();
     }
     
-    ENetPeer* peer = reinterpret_cast<ENetPeer*>(info[0].As<Napi::Number>().Int64Value());
+    bool ok = false;
+    ENetPeer* peer = JsValueToPeer(info[0], ok);
+    if (!ok || !peer) {
+        Napi::TypeError::New(env, "Invalid peer id").ThrowAsJavaScriptException();
+        return env.Null();
+    }
     enet_uint32 data = 0;
     
     if (info.Length() > 1 && info[1].IsNumber()) {
@@ -319,7 +346,12 @@ Napi::Value ENetWrapper::SendPacket(const Napi::CallbackInfo& info) {
         return env.Null();
     }
     
-    ENetPeer* peer = reinterpret_cast<ENetPeer*>(info[0].As<Napi::Number>().Int64Value());
+    bool ok = false;
+    ENetPeer* peer = JsValueToPeer(info[0], ok);
+    if (!ok || !peer) {
+        Napi::TypeError::New(env, "Invalid peer id").ThrowAsJavaScriptException();
+        return env.Null();
+    }
     enet_uint8 channelID = info[1].As<Napi::Number>().Uint32Value();
     
     enet_uint32 flags = ENET_PACKET_FLAG_RELIABLE;
@@ -362,7 +394,12 @@ Napi::Value ENetWrapper::SendRawPacket(const Napi::CallbackInfo& info) {
         return env.Null();
     }
     
-    ENetPeer* peer = reinterpret_cast<ENetPeer*>(info[0].As<Napi::Number>().Int64Value());
+    bool ok = false;
+    ENetPeer* peer = JsValueToPeer(info[0], ok);
+    if (!ok || !peer) {
+        Napi::TypeError::New(env, "Invalid peer id").ThrowAsJavaScriptException();
+        return env.Null();
+    }
     enet_uint8 channelID = info[1].As<Napi::Number>().Uint32Value();
     
     enet_uint32 flags = ENET_PACKET_FLAG_RELIABLE;

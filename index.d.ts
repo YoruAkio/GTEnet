@@ -1,6 +1,6 @@
 // @note type declarations for gtenet to improve editor intellisense
 
-export type PeerId = number;
+export type PeerId = bigint;
 
 export interface ConnectEvent {
   type: 'connect';
