@@ -61,6 +61,8 @@ export class Server {
   on(event: 'receive', handler: (event: ReceiveEvent) => void): this;
   on(event: 'error', handler: (error: Error) => void): this;
   on(event: 'ready', handler: () => void): this;
+  off(event: BaseEventName | 'ready', handler: (...args: any[]) => void): this;
+  once(event: BaseEventName | 'ready', handler: (...args: any[]) => void): this;
 
   // @note lifecycle
   initialize(): boolean;
@@ -81,6 +83,7 @@ export class Server {
   send(peerId: PeerId, channelId: number, data: Buffer | string, reliable?: boolean): number;
   sendRawPacket(peerId: PeerId, channelId: number, data: Buffer | Uint8Array | ArrayBuffer, flags?: number): number;
   disconnect(peerId: PeerId, data?: number): void;
+  broadcast(channelId: number, data: Buffer | string, reliable?: boolean): void;
 }
 
 /**
@@ -94,6 +97,8 @@ export class Client {
   on(event: 'disconnect', handler: (event: DisconnectEvent) => void): this;
   on(event: 'receive', handler: (event: ReceiveEvent) => void): this;
   on(event: 'error', handler: (error: Error) => void): this;
+  off(event: BaseEventName, handler: (...args: any[]) => void): this;
+  once(event: BaseEventName, handler: (...args: any[]) => void): this;
 
   // @note lifecycle
   initialize(): boolean;
@@ -105,7 +110,7 @@ export class Client {
   stop(): void;
 
   // @note connection helpers
-  connect(): Promise<void>;
+  connect(options?: { timeoutMs?: number }): Promise<void>;
 
   // @note instance methods target connected server by default
   send(channelId: number, data: Buffer | string, reliable?: boolean): number;

@@ -60,6 +60,27 @@ class ENetBase {
     return this;
   }
 
+  off(eventType, callback) {
+    const list = this.eventCallbacks[eventType];
+    if (list) {
+      const idx = list.indexOf(callback);
+      if (idx !== -1) list.splice(idx, 1);
+    }
+    return this;
+  }
+
+  once(eventType, callback) {
+    const wrapped = data => {
+      this.off(eventType, wrapped);
+      try {
+        callback(data);
+      } catch (err) {
+        console.error('Error in once callback:', err);
+      }
+    };
+    return this.on(eventType, wrapped);
+  }
+
   emit(eventType, data) {
     if (this.eventCallbacks[eventType]) {
       this.eventCallbacks[eventType].forEach(callback => {
@@ -125,6 +146,8 @@ class ENetBase {
         case 'connect':
           if (this.peers.has(event.peer)) {
             this.peers.get(event.peer).connected = true;
+          } else {
+            this.peers.set(event.peer, { connected: true });
           }
           this.emit('connect', event);
           break;
@@ -283,6 +306,18 @@ class Server extends ENetBase {
     }
   }
 
+  broadcast(channelId, data, reliable = true) {
+    for (const [peerId, peerInfo] of this.peers) {
+      if (peerInfo && peerInfo.connected) {
+        try {
+          super.send(peerId, channelId, data, reliable);
+        } catch (err) {
+          this.emit('error', err);
+        }
+      }
+    }
+  }
+
   // @note convenience helper to create and initialize server
   static async create(options = {}) {
     const server = new Server(options);
@@ -361,7 +396,7 @@ class Client extends ENetBase {
     }
   }
 
-  async connect() {
+  async connect(options = {}) {
     try {
       if (!this.hostCreated) {
         this.createClient();
@@ -383,8 +418,34 @@ class Client extends ENetBase {
         });
       }
 
-      // @note start processing events
-      await super.listen();
+      // @note if timeout requested, start loop in background and await connect or timeout
+      const timeoutMs = options && typeof options.timeoutMs === 'number' ? options.timeoutMs : 0;
+      if (timeoutMs > 0) {
+        if (!this.running) {
+          // start event loop without awaiting
+          (async () => {
+            try { await super.listen(); } catch (err) { this.emit('error', err); }
+          })();
+        }
+        await new Promise((resolve, reject) => {
+          let timer = null;
+          const onConnected = evt => {
+            if (this.serverPeer && evt && evt.peer === this.serverPeer) {
+              if (timer) clearTimeout(timer);
+              this.off('connect', onConnected);
+              resolve();
+            }
+          };
+          this.once('connect', onConnected);
+          timer = setTimeout(() => {
+            this.off('connect', onConnected);
+            reject(new Error('Connect timeout'));
+          }, timeoutMs);
+        });
+      } else {
+        // @note start processing events and block
+        await super.listen();
+      }
     } catch (err) {
       this.emit('error', err);
     }
