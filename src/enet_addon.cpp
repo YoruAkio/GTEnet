@@ -346,6 +346,9 @@ Napi::Value ENetWrapper::SendPacket(const Napi::CallbackInfo& info) {
     }
     
     int result = enet_peer_send(peer, channelID, packet);
+    if (result < 0) {
+        enet_packet_destroy(packet);
+    }
     return Napi::Number::New(env, result);
 }
 
@@ -394,6 +397,9 @@ Napi::Value ENetWrapper::SendRawPacket(const Napi::CallbackInfo& info) {
     }
     
     int result = enet_peer_send(peer, channelID, packet);
+    if (result < 0) {
+        enet_packet_destroy(packet);
+    }
     return Napi::Number::New(env, result);
 }
 
