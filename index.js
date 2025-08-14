@@ -470,6 +470,10 @@ export class RawPacketBuilder {
   }
 
   writeString(str, encoding = 'utf8') {
+    if (encoding && encoding !== 'utf8') {
+      // @note only utf8 is supported via TextEncoder
+      throw new Error('RawPacketBuilder.writeString supports only utf8 encoding');
+    }
     const encoder = new TextEncoder();
     const encoded = encoder.encode(str);
     const uint8Array = new Uint8Array(this.buffer, this.offset);
