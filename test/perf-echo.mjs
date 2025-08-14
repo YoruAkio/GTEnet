@@ -1,7 +1,8 @@
 // @note performance echo test (single client)
 import { startEchoServer, startClient, shutdown } from './utils.js';
 
-const port = parseInt(process.env.GTENET_TEST_PORT || '18002', 10);
+const randomPort = 20000 + Math.floor(Math.random() * 20000);
+const port = parseInt(process.env.GTENET_TEST_PORT || String(randomPort), 10);
 const count = parseInt(process.env.GTENET_TEST_COUNT || '1000', 10);
 
 const server = await startEchoServer({ port });

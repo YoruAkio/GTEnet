@@ -1,7 +1,8 @@
 // @note integration echo test
 import { startEchoServer, startClient, shutdown } from './utils.js';
 
-const port = 18001;
+const randomPort = 20000 + Math.floor(Math.random() * 20000);
+const port = parseInt(process.env.GTENET_TEST_PORT || String(randomPort), 10);
 const server = await startEchoServer({ port });
 
 const client = await startClient({ port });
