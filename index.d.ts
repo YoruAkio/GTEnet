@@ -102,20 +102,18 @@ export class Client {
 
   // @note host/event loop
   service(timeout?: number): ENetEvent | null;
-  listen(): Promise<void>;
   stop(): void;
 
   // @note connection helpers
-  connect(): PeerId | null;
-  disconnectFromServer(data?: number): void;
+  connect(): Promise<void>;
 
-  // @note send helpers
-  sendToServer(channelId: number, data: Buffer | string, reliable?: boolean): number;
-  sendRawToServer(channelId: number, data: Buffer | Uint8Array | ArrayBuffer, flags?: number): number;
+  // @note instance methods target connected server by default
+  send(channelId: number, data: Buffer | string, reliable?: boolean): number;
+  sendRawPacket(channelId: number, data: Buffer | Uint8Array | ArrayBuffer, flags?: number): number;
+  disconnect(data?: number): void;
 
-  // @note low-level send (available on instances)
-  send(peerId: PeerId, channelId: number, data: Buffer | string, reliable?: boolean): number;
-  sendRawPacket(peerId: PeerId, channelId: number, data: Buffer | Uint8Array | ArrayBuffer, flags?: number): number;
+  // @note still expose low-level methods via Base class through TS, but Client overrides instance signatures
+  // The Client instance methods above shadow the base signatures that include peerId.
 
   // @note current server peer id if connected
   serverPeer: PeerId | null;

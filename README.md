@@ -106,7 +106,7 @@ const client = new Client({
 client
   .on('connect', event => {
     console.log('🔗 Connected to server!');
-    client.sendToServer(0, 'Hello Server! 👋');
+    client.send(0, 'Hello Server! 👋');
   })
   .on('disconnect', event => {
     console.log('💔 Disconnected from server');
@@ -118,8 +118,8 @@ client
     console.error('❌ Client error:', err.message);
   });
 
-// Connect and start listening
-await client.listen();
+// @note connect and start event loop
+await client.connect();
 ```
 
 ## 📄 License

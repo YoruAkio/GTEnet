@@ -359,8 +359,12 @@ class Client extends ENetBase {
     }
   }
 
-  connect() {
+  async connect() {
     try {
+      if (!this.hostCreated) {
+        this.createClient();
+      }
+
       const peerId = this.native.connect(
         this.config.ip,
         this.config.port,
@@ -376,42 +380,40 @@ class Client extends ENetBase {
           connected: false,
         });
       }
-      return peerId;
+
+      // @note start processing events
+      await super.listen();
     } catch (err) {
       this.emit('error', err);
-      return null;
     }
   }
 
-  async listen() {
-    // @note connect first
-    this.connect();
 
-    // @note then start event loop
-    await super.listen();
-  }
 
+  // Override to send to the connected server peer by default
   send(channelId, data, reliable = true) {
     if (this.serverPeer) {
-      return this.send(this.serverPeer, channelId, data, reliable);
+      return super.send(this.serverPeer, channelId, data, reliable);
     } else {
       this.emit('error', new Error('Not connected to server'));
       return -1;
     }
   }
 
-  sendRaw(channelId, data, flags = PACKET_FLAG_RELIABLE) {
+  // Override to send raw packets to the connected server peer by default
+  sendRawPacket(channelId, data, flags = PACKET_FLAG_RELIABLE) {
     if (this.serverPeer) {
-      return this.sendRawPacket(this.serverPeer, channelId, data, flags);
+      return super.sendRawPacket(this.serverPeer, channelId, data, flags);
     } else {
       this.emit('error', new Error('Not connected to server'));
       return -1;
     }
   }
 
+  // Override to disconnect from the connected server peer by default
   disconnect(data = 0) {
     if (this.serverPeer) {
-      this.disconnect(this.serverPeer, data);
+      super.disconnect(this.serverPeer, data);
       this.serverPeer = null;
     }
   }

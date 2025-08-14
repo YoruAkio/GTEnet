@@ -15,7 +15,7 @@ client
     console.log(`✅ Connected to server! Peer ID: ${event.peer}`);
 
     // sending message to server
-    client.sendToServer(0, 'Hello, world!');
+    client.send(0, 'Hello, world!');
   })
   .on('disconnect', event => {
     console.log(`👋 Disconnected from server, reason: ${event.data}`);
@@ -30,12 +30,12 @@ client
 // Handle graceful shutdown
 process.on('SIGINT', () => {
   console.log('\n🛑 Shutting down client...');
-  client.disconnectFromServer();
+  client.disconnect();
   client.stop();
   client.destroy();
   client.deinitialize();
   process.exit(0);
 });
 
-// Start listening (this will connect and begin event loop)
-client.listen().catch(console.error);
+// Connect and start event loop
+client.connect().catch(console.error);
