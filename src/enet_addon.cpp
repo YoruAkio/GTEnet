@@ -5,6 +5,10 @@
 #include <cstdio>
 // @note bigint-safe peer id handling
 #include <cstdint>
+#include <atomic>
+
+// @note reference count for global enet initialize/deinitialize
+static std::atomic<uint32_t> g_enetInitCount{0};
 
 static ENetPeer* JsValueToPeer(const Napi::Value& value, bool& outOk) {
     outOk = false;
@@ -30,6 +34,7 @@ class ENetWrapper : public Napi::ObjectWrap<ENetWrapper> {
 public:
     static Napi::Object Init(Napi::Env env, Napi::Object exports);
     ENetWrapper(const Napi::CallbackInfo& info);
+    ~ENetWrapper();
 
 private:
     static Napi::FunctionReference constructor;
@@ -82,6 +87,19 @@ Napi::Object ENetWrapper::Init(Napi::Env env, Napi::Object exports) {
 ENetWrapper::ENetWrapper(const Napi::CallbackInfo& info) : Napi::ObjectWrap<ENetWrapper>(info) {
 }
 
+ENetWrapper::~ENetWrapper() {
+    if (host) {
+        enet_host_destroy(host);
+        host = nullptr;
+    }
+    if (initialized) {
+        initialized = false;
+        if (g_enetInitCount.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+            enet_deinitialize();
+        }
+    }
+}
+
 Napi::Value ENetWrapper::Initialize(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
     
@@ -89,9 +107,12 @@ Napi::Value ENetWrapper::Initialize(const Napi::CallbackInfo& info) {
         return Napi::Boolean::New(env, true);
     }
     
-    if (enet_initialize() != 0) {
-        Napi::TypeError::New(env, "Failed to initialize ENet").ThrowAsJavaScriptException();
-        return env.Null();
+    if (g_enetInitCount.fetch_add(1, std::memory_order_acq_rel) == 0) {
+        if (enet_initialize() != 0) {
+            g_enetInitCount.fetch_sub(1, std::memory_order_acq_rel);
+            Napi::TypeError::New(env, "Failed to initialize ENet").ThrowAsJavaScriptException();
+            return env.Null();
+        }
     }
     
     initialized = true;
@@ -107,8 +128,10 @@ Napi::Value ENetWrapper::Deinitialize(const Napi::CallbackInfo& info) {
     }
     
     if (initialized) {
-        enet_deinitialize();
         initialized = false;
+        if (g_enetInitCount.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+            enet_deinitialize();
+        }
     }
     
     return env.Undefined();
