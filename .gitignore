@@ -5,9 +5,6 @@ node_modules/
 build/
 *.node
 
-# test folder
-test
-
 # OS generated files
 .DS_Store
 .DS_Store?
