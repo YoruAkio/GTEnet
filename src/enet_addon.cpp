@@ -237,18 +237,18 @@ Napi::Value ENetWrapper::HostService(const Napi::CallbackInfo& info) {
     switch (event.type) {
         case ENET_EVENT_TYPE_CONNECT:
             eventObj.Set("type", "connect");
-            eventObj.Set("peer", Napi::BigInt::New(env, static_cast<uint64_t>(reinterpret_cast<uintptr_t>(event.peer)))));
+            eventObj.Set("peer", Napi::BigInt::New(env, static_cast<uint64_t>(reinterpret_cast<uintptr_t>(event.peer))));
             break;
             
         case ENET_EVENT_TYPE_DISCONNECT:
             eventObj.Set("type", "disconnect");
-            eventObj.Set("peer", Napi::BigInt::New(env, static_cast<uint64_t>(reinterpret_cast<uintptr_t>(event.peer)))));
+            eventObj.Set("peer", Napi::BigInt::New(env, static_cast<uint64_t>(reinterpret_cast<uintptr_t>(event.peer))));
             eventObj.Set("data", Napi::Number::New(env, event.data));
             break;
             
         case ENET_EVENT_TYPE_RECEIVE:
             eventObj.Set("type", "receive");
-            eventObj.Set("peer", Napi::BigInt::New(env, static_cast<uint64_t>(reinterpret_cast<uintptr_t>(event.peer)))));
+            eventObj.Set("peer", Napi::BigInt::New(env, static_cast<uint64_t>(reinterpret_cast<uintptr_t>(event.peer))));
             eventObj.Set("channelID", Napi::Number::New(env, event.channelID));
             
             // Convert packet data to Buffer
